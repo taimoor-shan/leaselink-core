@@ -1,0 +1,62 @@
+{
+  "project_context": {
+    "name": "Student Rental Housing Platform",
+    "role": "Senior WordPress Architect",
+    "primary_objective": "Build a secure, scalable marketplace connecting students and landlords."
+  },
+  "rules": {
+    "naming_conventions": {
+      "prefix": "srp_",
+      "class_prefix": "SRP_",
+      "function_case": "snake_case",
+      "class_case": "PascalCase"
+    },
+    "coding_standards": {
+      "indentation": "tabs",
+      "max_line_length": 100,
+      "php_version": "8.1",
+      "strict_types": true
+    },
+    "security_enforcement": {
+      "required_checks": [
+        "current_user_can",
+        "wp_verify_nonce",
+        "sanitize_text_field",
+        "esc_html"
+      ],
+      "forbidden_patterns": ["$_POST", "$_GET", "$_REQUEST", "query("],
+      "database_interaction": "Always use $wpdb->prepare()"
+    }
+  },
+  "autonomous_behavior": {
+    "read_order": [
+      "docs/REQUIREMENTS.md",
+      "docs/ARCHITECTURE.md",
+      "docs/API_SPEC.md"
+    ],
+    "verification_workflow": [
+      "Check REQUIREMENTS.md for business logic",
+      "Write PHPUnit test",
+      "Implement functionality",
+      "Run PHP Lint",
+      "Security audit against checklist"
+    ],
+    "auto_commit": {
+      "enabled": true,
+      "format": "agent(state): {description}"
+    },
+    "state_management": {
+      "blackboard_file": "docs/state.md",
+      "update_after_task": true,
+      "commit_prefix": "agent(state):",
+      "branching_strategy": "feature-branches-only",
+      "context_injection_command": "git log -p docs/state.md",
+      "handoff_workflow": ".agent/workflows/handoff.md"
+    }
+  },
+  "tech_stack": {
+    "frontend": ["Tailwind CSS", "Alpine.js", "HTMX"],
+    "backend": ["WordPress", "MySQL", "Redis"],
+    "testing": ["PHPUnit"]
+  }
+}

@@ -1,0 +1,83 @@
+# Student Rental Platform - Antigravity Project Configuration
+project:
+  name: "Student Rental Housing Platform"
+  type: "wordpress-plugin"
+  version: "1.0.0"
+  description: "WordPress marketplace connecting students with landlords for rental housing"
+
+platform:
+  framework: "wordpress"
+  php_version: "8.1"
+  wordpress_version: "6.4+"
+  mysql_version: "8.0+"
+
+structure:
+  plugin_slug: "student-rental-platform"
+  plugin_prefix: "srp_"
+  namespace: "StudentRentalPlatform"
+  text_domain: "student-rental-platform"
+
+directories:
+  source: "includes/"
+  admin: "admin/"
+  public: "public/"
+  tests: "tests/"
+  assets: "assets/"
+  templates: "templates/"
+
+dependencies:
+  php:
+    - "composer/installers"
+    - "phpunit/phpunit"
+  javascript:
+    - "alpinejs"
+    - "htmx"
+    - "tailwindcss"
+  wordpress:
+    - "advanced-custom-fields-pro" # Optional
+    - "redis-cache" # Recommended
+
+coding_standards:
+  php: "WordPress"
+  javascript: "WordPress"
+  css: "WordPress"
+  indentation: "tabs"
+  line_length: 100
+
+security:
+  sanitize_inputs: true
+  escape_outputs: true
+  nonce_verification: true
+  capability_checks: true
+  prepared_statements: true
+
+performance:
+  caching: "redis"
+  object_cache: true
+  transients: true
+  query_optimization: true
+  max_queries_per_page: 50
+
+testing:
+  framework: "phpunit"
+  coverage_minimum: 70
+  integration_tests: true
+  unit_tests: true
+
+documentation:
+  primary: "docs/REQUIREMENTS.md"
+  architecture: "docs/ARCHITECTURE.md"
+  api: "docs/API_SPEC.md"
+  inline: "phpdoc"
+
+ai_instructions:
+  context_file: ".antigravity/context.md"
+  instructions_file: ".antigravity/instructions.json" # Link the JSON you just created
+  follow_wordpress_standards: true
+  security_priority: "high"
+  read_requirements_first: true
+
+  # Add these for autonomous power:
+  validation_mode: "strict" # Forces agent to cross-check context.md before every save
+  workflow_priority: "test-driven" # Encourages the agent to write the PHPUnit test first
+  allow_filesystem_write: true # Required for the agent to build the files without asking
