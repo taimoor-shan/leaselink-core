@@ -119,7 +119,7 @@ class SRP_Listing_Meta
                         $rent = get_post_meta($unit->ID, '_rent_price', true);
                         $label = $unit->post_title;
                         if ($rent) {
-                            $label .= ' — $' . number_format(floatval($rent), 0);
+                            $label .= ' — €' . number_format(floatval($rent), 0, ',', '.');
                         }
                         ?>
                         <option value="<?php echo esc_attr($unit->ID); ?>" data-property="<?php echo esc_attr($property->ID); ?>"
@@ -205,6 +205,7 @@ class SRP_Listing_Meta
                     </select>
                 </td>
             </tr>
+            <tr>
                 <th><label for="srp_featured_flag">
                         <?php esc_html_e('Featured Listing', 'leaselink-core'); ?>
                     </label></th>

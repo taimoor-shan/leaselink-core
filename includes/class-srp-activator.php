@@ -31,6 +31,7 @@ class SRP_Activator
 		require_once plugin_dir_path(__FILE__) . 'class-srp-roles.php';
 		SRP_Roles::install_roles();
 		self::create_tables();
+		SRP_Cron::schedule_events();
 		update_option('srp_db_version', '1.0.0');
 		flush_rewrite_rules();
 	}

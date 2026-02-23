@@ -59,6 +59,20 @@ class SRP_Core
     public $verification_workflow;
 
     /**
+     * Cron scheduler instance.
+     *
+     * @var SRP_Cron
+     */
+    public $cron;
+
+    /**
+     * Notifications instance.
+     *
+     * @var SRP_Notifications
+     */
+    public $notifications;
+
+    /**
      * Get the singleton instance.
      *
      * @return SRP_Core
@@ -72,13 +86,29 @@ class SRP_Core
     }
 
     /**
-     * Define the core functionality of the plugin.
+     * Store the plugin reference. Initialization happens in run().
      */
     public function __construct()
+    {
+        // Intentionally empty — run() is the entry point.
+    }
+
+    /**
+     * Run the plugin.
+     *
+     * Loads dependencies, initialises post types, workflows,
+     * cron, notifications, REST API, and admin/public hooks.
+     *
+     * @since 1.0.0
+     */
+    public function run()
     {
         $this->load_dependencies();
         $this->init_post_types();
         $this->init_workflows();
+        $this->init_cron();
+        $this->init_notifications();
+        $this->init_rest_api();
         $this->define_admin_hooks();
         $this->define_public_hooks();
     }
@@ -99,6 +129,14 @@ class SRP_Core
         require_once $path . 'workflows/class-srp-listing-workflow.php';
         require_once $path . 'workflows/class-srp-application-workflow.php';
         require_once $path . 'workflows/class-srp-verification-workflow.php';
+
+        // Cron & Notifications.
+        require_once $path . 'class-srp-cron.php';
+        require_once $path . 'class-srp-notifications.php';
+
+        // REST API.
+        require_once $path . 'rest-api/class-srp-rest-listings.php';
+        require_once $path . 'rest-api/class-srp-rest-applications.php';
 
         // Admin Meta Boxes.
         $admin_path = plugin_dir_path(__DIR__) . 'admin/';
@@ -128,6 +166,37 @@ class SRP_Core
     }
 
     /**
+     * Initialize the cron scheduler.
+     *
+     * @since 1.0.0
+     */
+    private function init_cron()
+    {
+        $this->cron = new SRP_Cron($this->listing_workflow, $this->application_workflow);
+    }
+
+    /**
+     * Initialize email notifications.
+     *
+     * @since 1.0.0
+     */
+    private function init_notifications()
+    {
+        $this->notifications = new SRP_Notifications();
+    }
+
+    /**
+     * Initialize REST API endpoints.
+     *
+     * @since 1.0.0
+     */
+    private function init_rest_api()
+    {
+        new RestApi\SRP_REST_Listings();
+        new RestApi\SRP_REST_Applications($this->application_workflow);
+    }
+
+    /**
      * Register admin-area hooks.
      */
     private function define_admin_hooks()
@@ -144,14 +213,28 @@ class SRP_Core
      */
     private function define_public_hooks()
     {
-        // Public hooks will be added in Phase 4+.
+        // Listing view counter.
+        add_action('template_redirect', array($this, 'track_listing_view'));
     }
 
     /**
-     * Run the plugin.
+     * Increment the view count for a listing when viewed on the frontend.
+     *
+     * @since 1.0.0
      */
-    public function run()
+    public function track_listing_view()
     {
-        // Loader execution point.
+        if (!is_singular('cpt_listing')) {
+            return;
+        }
+
+        // Don't count admin/author views.
+        $post = get_queried_object();
+        if (!$post || (is_user_logged_in() && absint($post->post_author) === get_current_user_id())) {
+            return;
+        }
+
+        $count = absint(get_post_meta($post->ID, '_view_count', true));
+        update_post_meta($post->ID, '_view_count', $count + 1);
     }
 }

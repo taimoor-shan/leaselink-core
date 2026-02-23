@@ -26,6 +26,33 @@ class SRP_Unit_Meta
     {
         add_action('add_meta_boxes', array($this, 'add_meta_boxes'));
         add_action('save_post_cpt_unit', array($this, 'save_meta'), 10, 2);
+        add_action('admin_notices', array($this, 'property_required_notice'));
+    }
+
+    /**
+     * Display admin notice when a Unit has no parent Property.
+     *
+     * @since 1.0.0
+     */
+    public function property_required_notice()
+    {
+        $screen = get_current_screen();
+        if (!$screen || 'cpt_unit' !== $screen->post_type || 'post' !== $screen->base) {
+            return;
+        }
+
+        global $post;
+        if (!$post || 'auto-draft' === $post->post_status) {
+            return;
+        }
+
+        $property_id = get_post_meta($post->ID, '_unit_property_id', true);
+        if (empty($property_id)) {
+            printf(
+                '<div class="notice notice-error"><p>%s</p></div>',
+                esc_html__('This unit must be assigned to a Property. Please select a parent Property before publishing.', 'leaselink-core')
+            );
+        }
     }
 
     /**
@@ -450,14 +477,23 @@ class SRP_Unit_Meta
             return;
         }
 
-        // ---- Relationship: Property ----
-        if (isset($_POST['_unit_property_id'])) {
-            $property_id = absint($_POST['_unit_property_id']);
-            if ($property_id > 0) {
+        // ---- Relationship: Property (REQUIRED — §4.1) ----
+        $property_id = isset($_POST['_unit_property_id']) ? absint($_POST['_unit_property_id']) : 0;
+
+        if ($property_id > 0) {
+            // Verify the property actually exists.
+            $property = get_post($property_id);
+            if ($property && 'cpt_property' === $property->post_type) {
                 update_post_meta($post_id, '_unit_property_id', $property_id);
-            } else {
-                delete_post_meta($post_id, '_unit_property_id');
             }
+        }
+
+        // Prevent publishing without a property.
+        if (empty($property_id) && 'publish' === $post->post_status) {
+            wp_update_post(array(
+                'ID' => $post_id,
+                'post_status' => 'draft',
+            ));
         }
 
         // ---- Pricing ----

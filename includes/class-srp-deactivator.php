@@ -25,6 +25,7 @@ class SRP_Deactivator
      */
     public static function deactivate()
     {
+        SRP_Cron::unschedule_events();
         SRP_Roles::remove_roles();
         flush_rewrite_rules();
     }

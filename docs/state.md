@@ -1,70 +1,63 @@
-# Project Blackboard — LeaseLink Core
-
-> **Last Updated:** 2026-02-23  
-> **Branch:** `main`  
-> **Session Agent:** Antigravity
-
----
+# LeaseLink Agent State
 
 ## Active Mission
 
-Build a secure, scalable WordPress plugin for student rental housing marketplace with landlord verification, application management, and future monetization capabilities.
-
-**Current Phase:** Core plugin architecture — CPTs, meta fields, REST API endpoints, and state machine workflows.
-
----
+Audit leaselink-core plugin against REQUIREMENTS.md, fix bugs, and implement missing features.
 
 ## Architecture Decisions
 
-| Decision                | Choice                  | Rationale                                                       |
-| ----------------------- | ----------------------- | --------------------------------------------------------------- |
-| Frontend reactivity     | Alpine.js               | Lightweight, no build step, fits WordPress templating model     |
-| Dynamic content loading | HTMX                    | Server-rendered partials avoid SPA complexity                   |
-| CSS framework           | Tailwind CSS (via Vite) | Utility-first, rapid prototyping, consistent design tokens      |
-| Caching layer           | Redis + Transients      | Object cache for queries, transients for expensive computations |
-| State machines          | Custom PHP (post meta)  | WordPress-native, no external dependencies, simple transitions  |
-| Currency/units          | EUR / m²                | European market — standardized across all templates and filters |
-| Lightbox gallery        | Fancybox v5 (CDN)       | Rich thumbnails, toolbar controls, minimal JS overhead          |
-
----
+- `SRP_Core::run()` is the single entry point — constructor is empty
+- Cron receives workflow instances via constructor injection
+- REST API delegates all business logic to workflow classes
+- Notifications are decoupled — listen to `do_action` hooks emitted by workflows
+- Property-Unit relationship enforced: Units cannot be published without a parent Property
 
 ## The 'Why' Log
 
-- **`srp_` prefix everywhere**: Namespace isolation to prevent collisions with other plugins and themes.
-- **Custom tables for applications**: `wp_rental_applications` — post meta would be too slow for the query patterns needed (filtering by student, status, date ranges).
-- **Verification levels (0–4)**: Tiered trust system — levels 0–1 can't list, level 2 needs admin review, level 4+ auto-publishes. This prevents spam while rewarding trusted landlords.
-- **Vite with stable filenames**: Production builds use `[name].js` / `[name].css` (no hashing) so WordPress `wp_enqueue_script` references remain static.
-
----
+- **Moved init from constructor to run():** Matches the WordPress plugin boot pattern (`$plugin = new Core(); $plugin->run();`) and allows future testability
+- **Property-Unit enforcement:** User feedback — §4.1 says "Every Unit MUST belong to a Property, Cannot create orphan Units" — enforced via auto-revert to draft + admin notice
+- **€ currency:** European standards alignment per conversation 8133bbbb
 
 ## Blocking Issues
 
-_None currently._
-
----
+None.
 
 ## Technical Debt
 
-- [ ] Unit test coverage is incomplete — test scaffolding exists but most workflows lack tests.
-- [ ] No CI/CD pipeline configured yet.
-- [ ] Redis caching strategy is planned but not yet implemented.
-- [ ] Contact Form 7 styling is patched inline — should be extracted to a dedicated stylesheet.
-
----
+- REST API listing search filters query property/unit meta across post types — performance at scale needs meta caching/denormalization
+- No rate limiting on REST endpoints or view counter
+- Notifications use plain text in HTML wrapper — should migrate to proper email templates
+- No unit tests yet (§12 in requirements)
 
 ## Current Context
 
-**Last session work:**
+All 4 implementation phases complete:
 
-- Initial `state.md` created as part of Git-Blackboard workflow integration.
-- Git repository initialized for the `leaselink-core` plugin.
-- Agent rules and `/handoff` workflow configured.
+1. **Bug fixes:** HTML table, currency, run() refactor, Property-Unit enforcement
+2. **Cron:** Listing expiry (90d) + application expiry (14d), scheduled twice daily
+3. **Notifications:** 7 email hooks wired to workflow events
+4. **REST API:** Public listing search with filters, authenticated application management
+5. **View counter:** Increments on frontend visits and API detail requests
 
----
+### Files Modified
+
+- `class-srp-core.php` — restructured with cron/notifications/REST/view counter init
+- `class-srp-listing-meta.php` — fixed HTML, fixed currency
+- `class-srp-unit-meta.php` — Property-Unit enforcement
+- `class-srp-activator.php` — cron scheduling on activation
+- `class-srp-deactivator.php` — cron cleanup on deactivation
+
+### Files Created
+
+- `class-srp-cron.php` — WP cron scheduler
+- `class-srp-notifications.php` — email notification handler
+- `rest-api/class-srp-rest-listings.php` — public listing endpoints
+- `rest-api/class-srp-rest-applications.php` — application management endpoints
 
 ## Next Steps
 
-1. Continue implementing CPT meta fields per `REQUIREMENTS.md` audit results.
-2. Implement application submission workflow with state machine transitions.
-3. Add PHPUnit tests for listing lifecycle (Draft → Pending → Published → Booked/Expired).
-4. Set up `.gitignore` and make the first meaningful feature branch.
+1. Add PHPUnit tests for workflows and REST endpoints (§12)
+2. Implement search & filtering frontend (Alpine.js + HTMX per §11)
+3. Add geolocation search with PostGIS or meta-based radius queries (§9)
+4. Build email templates with proper branding
+5. Implement monetization features (§8: subscriptions, featured listing credits)
