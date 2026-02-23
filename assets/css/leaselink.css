@@ -1,0 +1,469 @@
+/**
+ * LeaseLink — Plugin Default Styles
+ *
+ * These styles provide baseline presentation for all templates.
+ * Any theme can override by providing templates in yourtheme/leaselink/.
+ *
+ * @package LeaseLink
+ * @since   1.1.0
+ */
+
+/* ========================================
+   CSS Custom Properties (Design Tokens)
+   ======================================== */
+:root {
+    --ll-primary: #4F46E5;
+    --ll-primary-light: #818CF8;
+    --ll-primary-hover: #4338CA;
+    --ll-dark: #0F172A;
+    --ll-gray: #64748B;
+    --ll-light: #FFFFFF;
+    --ll-accent: #0D9488;
+    --ll-surface: #F8FAFC;
+    --ll-success: #10B981;
+    --ll-warning: #F59E0B;
+    --ll-danger: #EF4444;
+    --ll-border: #E2E8F0;
+    --ll-radius: 8px;
+    --ll-radius-lg: 12px;
+    --ll-radius-xl: 16px;
+    --ll-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --ll-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --ll-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --ll-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --ll-font: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ========================================
+   Dashboard Layout
+   ======================================== */
+.ll-dashboard {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 64px);
+    font-family: var(--ll-font);
+}
+
+@media (max-width: 782px) {
+    .ll-dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ll-dashboard-sidebar {
+    background-color: var(--ll-surface);
+    border-right: 1px solid var(--ll-border);
+    padding: 2rem 1.25rem;
+}
+
+.ll-dashboard-content {
+    padding: 2rem;
+    max-width: 1200px;
+}
+
+@media (max-width: 782px) {
+    .ll-dashboard-content {
+        padding: 1rem;
+    }
+}
+
+/* ========================================
+   Stat Cards Grid
+   ======================================== */
+.ll-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+/* ========================================
+   Cards
+   ======================================== */
+.ll-card {
+    background-color: var(--ll-light);
+    border-radius: var(--ll-radius-lg);
+    border: 1px solid var(--ll-border);
+    box-shadow: var(--ll-shadow-sm);
+    overflow: hidden;
+}
+
+.ll-card:hover {
+    box-shadow: var(--ll-shadow-md);
+}
+
+.ll-card-body {
+    padding: 1.25rem;
+}
+
+/* ========================================
+   Form Fields
+   ======================================== */
+.ll-input,
+.ll-select,
+.ll-textarea {
+    display: flex;
+    width: 100%;
+    height: 2.75rem;
+    border-radius: var(--ll-radius);
+    border: 1px solid var(--ll-border);
+    background-color: var(--ll-light);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--ll-dark);
+    outline: none;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+    font-family: var(--ll-font);
+}
+
+.ll-textarea {
+    height: 140px;
+    resize: vertical;
+}
+
+.ll-input:focus,
+.ll-select:focus,
+.ll-textarea:focus {
+    border-color: var(--ll-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.ll-input::placeholder,
+.ll-textarea::placeholder {
+    color: var(--ll-gray);
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+.ll-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--ll-radius);
+    border: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    font-family: var(--ll-font);
+    line-height: 1.5;
+}
+
+.ll-btn-primary {
+    background-color: var(--ll-primary);
+    color: var(--ll-light);
+}
+
+.ll-btn-primary:hover {
+    background-color: var(--ll-primary-hover);
+}
+
+.ll-btn-secondary {
+    background-color: var(--ll-surface);
+    color: var(--ll-dark);
+    border: 1px solid var(--ll-border);
+}
+
+.ll-btn-secondary:hover {
+    background-color: var(--ll-border);
+}
+
+.ll-btn-danger {
+    background-color: var(--ll-danger);
+    color: var(--ll-light);
+}
+
+.ll-btn-danger:hover {
+    background-color: #DC2626;
+}
+
+.ll-btn-ghost {
+    background: transparent;
+    color: var(--ll-primary);
+}
+
+.ll-btn-ghost:hover {
+    background-color: rgba(79, 70, 229, 0.08);
+}
+
+.ll-btn-sm {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+}
+
+.ll-btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+/* ========================================
+   Badges
+   ======================================== */
+.ll-badge {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.ll-badge-primary { background-color: rgba(79, 70, 229, 0.1); color: var(--ll-primary); }
+.ll-badge-success { background-color: rgba(16, 185, 129, 0.1); color: var(--ll-success); }
+.ll-badge-warning { background-color: rgba(245, 158, 11, 0.1); color: var(--ll-warning); }
+.ll-badge-danger  { background-color: rgba(239, 68, 68, 0.1); color: var(--ll-danger); }
+.ll-badge-gray    { background-color: #F1F5F9; color: var(--ll-gray); }
+.ll-badge-accent  { background-color: rgba(13, 148, 136, 0.1); color: var(--ll-accent); }
+
+/* ========================================
+   Listing Card
+   ======================================== */
+.ll-listing-card {
+    display: block;
+    background: var(--ll-light);
+    border-radius: var(--ll-radius-lg);
+    border: 1px solid var(--ll-border);
+    overflow: hidden;
+    box-shadow: var(--ll-shadow-sm);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.ll-listing-card:hover {
+    box-shadow: var(--ll-shadow-lg);
+    text-decoration: none;
+    color: inherit;
+}
+
+.ll-listing-card-image {
+    position: relative;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    background-color: var(--ll-surface);
+}
+
+.ll-listing-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.ll-listing-card:hover .ll-listing-card-image img {
+    transform: scale(1.05);
+}
+
+.ll-listing-card-body {
+    padding: 1rem;
+}
+
+.ll-listing-card-price {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--ll-primary);
+    white-space: nowrap;
+}
+
+.ll-listing-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ll-dark);
+    margin: 0 0 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ll-listing-card-location {
+    font-size: 0.875rem;
+    color: var(--ll-gray);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.ll-listing-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--ll-gray);
+}
+
+.ll-listing-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* ========================================
+   Search / Filter Layout
+   ======================================== */
+.ll-search-layout {
+    display: flex;
+    gap: 2rem;
+}
+
+.ll-search-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+}
+
+.ll-search-results {
+    flex: 1;
+    min-width: 0;
+}
+
+.ll-search-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+@media (max-width: 960px) {
+    .ll-search-layout {
+        flex-direction: column;
+    }
+
+    .ll-search-sidebar {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   Stat Card
+   ======================================== */
+.ll-stat-card {
+    background: var(--ll-light);
+    border-radius: var(--ll-radius-lg);
+    border: 1px solid var(--ll-border);
+    padding: 1.25rem;
+    box-shadow: var(--ll-shadow-sm);
+}
+
+.ll-stat-card-label {
+    font-size: 0.875rem;
+    color: var(--ll-gray);
+    margin-bottom: 0.25rem;
+}
+
+.ll-stat-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ll-dark);
+    margin: 0;
+}
+
+.ll-stat-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--ll-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ========================================
+   Empty State
+   ======================================== */
+.ll-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1.5rem;
+    text-align: center;
+}
+
+.ll-empty-state-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: var(--ll-radius-xl);
+    background-color: var(--ll-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: var(--ll-border);
+}
+
+.ll-empty-state-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--ll-dark);
+    margin-bottom: 0.25rem;
+}
+
+.ll-empty-state-description {
+    font-size: 0.875rem;
+    color: var(--ll-gray);
+    max-width: 24rem;
+}
+
+/* ========================================
+   Dashboard Navigation
+   ======================================== */
+.ll-dashboard-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--ll-radius);
+    font-size: 0.875rem;
+    color: var(--ll-gray);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ll-dashboard-nav a:hover {
+    background-color: var(--ll-border);
+    color: var(--ll-dark);
+    text-decoration: none;
+}
+
+.ll-dashboard-nav a.active {
+    background-color: rgba(79, 70, 229, 0.1);
+    color: var(--ll-primary);
+    font-weight: 500;
+}
+
+.ll-dashboard-nav a svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* ========================================
+   Responsive Utilities
+   ======================================== */
+.ll-hide-mobile {
+    display: none;
+}
+
+@media (min-width: 782px) {
+    .ll-hide-mobile {
+        display: block;
+    }
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes ll-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ll-skeleton {
+    animation: ll-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: var(--ll-surface);
+    border-radius: var(--ll-radius);
+}

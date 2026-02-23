@@ -73,6 +73,22 @@ class SRP_Core
     public $notifications;
 
     /**
+     * Template loader instance.
+     *
+     * @var SRP_Template_Loader
+     * @since 1.1.0
+     */
+    public $template_loader;
+
+    /**
+     * Frontend instance.
+     *
+     * @var SRP_Frontend
+     * @since 1.1.0
+     */
+    public $frontend;
+
+    /**
      * Get the singleton instance.
      *
      * @return SRP_Core
@@ -137,6 +153,10 @@ class SRP_Core
         // REST API.
         require_once $path . 'rest-api/class-srp-rest-listings.php';
         require_once $path . 'rest-api/class-srp-rest-applications.php';
+
+        // Template Loader & Frontend.
+        require_once $path . 'class-srp-template-loader.php';
+        require_once $path . 'class-srp-frontend.php';
 
         // Admin Meta Boxes.
         $admin_path = plugin_dir_path(__DIR__) . 'admin/';
@@ -215,6 +235,12 @@ class SRP_Core
     {
         // Listing view counter.
         add_action('template_redirect', array($this, 'track_listing_view'));
+
+        // Template loader — overrides CPT templates.
+        $this->template_loader = new SRP_Template_Loader();
+
+        // Frontend — shortcodes, assets, dashboard protection.
+        $this->frontend = new SRP_Frontend();
     }
 
     /**
