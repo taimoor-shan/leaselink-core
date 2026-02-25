@@ -61,6 +61,10 @@ $nonce = wp_create_nonce('wp_rest');
                     <textarea x-model="property.description" class="ll-textarea"
                         placeholder="Describe your property..."></textarea>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Featured Image *</label>
+                    <input type="file" x-ref="propertyImage" accept="image/*" class="ll-input p-2" required>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1.5">Address *</label>
@@ -85,6 +89,18 @@ $nonce = wp_create_nonce('wp_rest');
                     <div>
                         <label class="block text-sm font-medium mb-1.5">Postal Code</label>
                         <input type="text" x-model="property.postal_code" class="ll-input" placeholder="Postal code">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Latitude</label>
+                        <input type="number" step="any" x-model="property.latitude" class="ll-input"
+                            placeholder="e.g., 48.2082">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Longitude</label>
+                        <input type="number" step="any" x-model="property.longitude" class="ll-input"
+                            placeholder="e.g., 16.3738">
                     </div>
                 </div>
                 <div>
@@ -132,19 +148,37 @@ $nonce = wp_create_nonce('wp_rest');
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1.5">Monthly Rent (€) *</label>
-                        <input type="number" x-model="unit.rent_price" class="ll-input" placeholder="500" min="1"
-                            required>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Unit Featured Image</label>
+                    <input type="file" x-ref="unitImage" accept="image/*" class="ll-input p-2">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-sm font-medium mb-1.5">Monthly Rent *</label>
+                        <div class="flex gap-2">
+                            <input type="number" x-model="unit.rent_price" class="ll-input w-full" placeholder="500"
+                                min="1" required>
+                            <input type="text" x-model="unit.currency" class="ll-input w-24 text-center"
+                                placeholder="USD">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1.5">Deposit (€)</label>
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-sm font-medium mb-1.5">Deposit Amount</label>
                         <input type="number" x-model="unit.deposit" class="ll-input" placeholder="1000">
                     </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1.5">Area (m²)</label>
                         <input type="number" x-model="unit.square_footage" class="ll-input" placeholder="25">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Floor Number</label>
+                        <input type="number" x-model="unit.floor_number" class="ll-input" placeholder="2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Max Occupancy</label>
+                        <input type="number" x-model="unit.max_occupancy" class="ll-input" placeholder="1" min="1">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -162,7 +196,15 @@ $nonce = wp_create_nonce('wp_rest');
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Lease Min (Mo)</label>
+                        <input type="number" x-model="unit.lease_duration_min" class="ll-input" placeholder="6">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Lease Max (Mo)</label>
+                        <input type="number" x-model="unit.lease_duration_max" class="ll-input" placeholder="12">
+                    </div>
                     <div>
                         <label class="block text-sm font-medium mb-1.5">Gender Preference</label>
                         <select x-model="unit.gender_preference" class="ll-input">
@@ -171,10 +213,29 @@ $nonce = wp_create_nonce('wp_rest');
                             <option value="female">Female Only</option>
                         </select>
                     </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-1.5">Max Occupancy</label>
-                        <input type="number" x-model="unit.max_occupancy" class="ll-input" placeholder="1" min="1">
+                        <label class="block text-sm font-medium mb-1.5">Pet Policy</label>
+                        <select x-model="unit.pet_policy" class="ll-input">
+                            <option value="not_allowed">Not Allowed</option>
+                            <option value="allowed">Allowed</option>
+                            <option value="negotiable">Negotiable</option>
+                        </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Smoking Policy</label>
+                        <select x-model="unit.smoking_policy" class="ll-input">
+                            <option value="not_allowed">Not Allowed</option>
+                            <option value="allowed">Allowed</option>
+                            <option value="outside_only">Outside Only</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Utilities Included (Comma separated)</label>
+                    <input type="text" x-model="unit.utilities" class="ll-input"
+                        placeholder="water,electricity,internet">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1.5">Description</label>
@@ -221,7 +282,7 @@ $nonce = wp_create_nonce('wp_rest');
                         <p class="text-sm mb-1"><span class="text-gray">Name:</span> <span class="font-medium text-dark"
                                 x-text="unit.title"></span></p>
                         <p class="text-sm mb-1"><span class="text-gray">Rent:</span> <span class="font-medium text-dark"
-                                x-text="'€' + unit.rent_price + '/month'"></span></p>
+                                x-text="(unit.currency || 'USD') + ' ' + unit.rent_price + '/month'"></span></p>
                         <p class="text-sm mb-1"><span class="text-gray">Available:</span> <span
                                 class="font-medium text-dark" x-text="unit.available_from"></span></p>
                         <p class="text-sm mb-1"><span class="text-gray">Furnished:</span> <span
@@ -266,32 +327,55 @@ $nonce = wp_create_nonce('wp_rest');
     function propertyForm() {
         return {
             step: 0, submitting: false, success: false,
-            property: { title: '', description: '', address: '', city: '', state: '', country: '', postal_code: '', property_type: '' },
-            unit: { title: '', description: '', rent_price: '', deposit: '', room_type: '', furnished: '', available_from: '', gender_preference: 'any', max_occupancy: 1, square_footage: '' },
+            property: { title: '', description: '', address: '', city: '', state: '', country: '', postal_code: '', property_type: '', latitude: '', longitude: '' },
+            unit: { title: '', description: '', rent_price: '', currency: 'USD', deposit: '', room_type: '', furnished: '', available_from: '', gender_preference: 'any', max_occupancy: 1, square_footage: '', floor_number: '', lease_duration_min: '', lease_duration_max: '', pet_policy: 'not_allowed', smoking_policy: 'not_allowed', utilities: '' },
             async submitProperty() {
                 this.submitting = true;
                 try {
+                    const propData = new FormData();
+                    for (const key in this.property) {
+                        propData.append(key, this.property[key]);
+                    }
+                    if (this.$refs.propertyImage.files.length > 0) {
+                        propData.append('featured_image', this.$refs.propertyImage.files[0]);
+                    }
+
                     const propRes = await fetch('<?php echo esc_url(rest_url('rental/v1/properties')); ?>', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': '<?php echo $nonce; ?>' },
-                        body: JSON.stringify(this.property),
+                        headers: { 'X-WP-Nonce': '<?php echo $nonce; ?>' },
+                        body: propData,
                     });
-                    const propData = await propRes.json();
-                    if (propData.id) {
-                        await fetch(`<?php echo esc_url(rest_url('rental/v1/properties/')); ?>${propData.id}/units`, {
+
+                    const propResponseJson = await propRes.json();
+
+                    if (propResponseJson.id) {
+                        const unitData = new FormData();
+                        for (const key in this.unit) {
+                            unitData.append(key, this.unit[key]);
+                        }
+                        if (this.$refs.unitImage.files.length > 0) {
+                            unitData.append('featured_image', this.$refs.unitImage.files[0]);
+                        }
+
+                        await fetch(`<?php echo esc_url(rest_url('rental/v1/properties/')); ?>${propResponseJson.id}/units`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': '<?php echo $nonce; ?>' },
-                            body: JSON.stringify(this.unit),
+                            headers: { 'X-WP-Nonce': '<?php echo $nonce; ?>' },
+                            body: unitData,
                         });
                         this.success = true;
                     } else { alert('Failed to create property. Please try again.'); }
-                } catch (error) { alert('Something went wrong. Please try again.'); }
+                } catch (error) {
+                    console.error(error);
+                    alert('Something went wrong. Please try again.');
+                }
                 this.submitting = false;
             },
             resetForm() {
                 this.step = 0; this.success = false;
-                this.property = { title: '', description: '', address: '', city: '', state: '', country: '', postal_code: '', property_type: '' };
-                this.unit = { title: '', description: '', rent_price: '', deposit: '', room_type: '', furnished: '', available_from: '', gender_preference: 'any', max_occupancy: 1, square_footage: '' };
+                this.property = { title: '', description: '', address: '', city: '', state: '', country: '', postal_code: '', property_type: '', latitude: '', longitude: '' };
+                this.unit = { title: '', description: '', rent_price: '', currency: 'USD', deposit: '', room_type: '', furnished: '', available_from: '', gender_preference: 'any', max_occupancy: 1, square_footage: '', floor_number: '', lease_duration_min: '', lease_duration_max: '', pet_policy: 'not_allowed', smoking_policy: 'not_allowed', utilities: '' };
+                if (this.$refs.propertyImage) this.$refs.propertyImage.value = '';
+                if (this.$refs.unitImage) this.$refs.unitImage.value = '';
             }
         };
     }

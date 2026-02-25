@@ -182,6 +182,15 @@
     background-color: #DC2626;
 }
 
+.ll-btn-warning {
+    background-color: var(--ll-warning);
+    color: var(--ll-light);
+}
+
+.ll-btn-warning:hover {
+    background-color: #D97706;
+}
+
 .ll-btn-ghost {
     background: transparent;
     color: var(--ll-primary);

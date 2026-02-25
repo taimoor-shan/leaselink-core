@@ -27,7 +27,7 @@ class SRP_Template_Loader
      */
     public function __construct()
     {
-        add_filter('template_include', [$this, 'template_include']);
+        add_filter('template_include', [$this, 'template_include'], 99);
     }
 
     /**
@@ -88,6 +88,14 @@ class SRP_Template_Loader
         if (is_page()) {
             $slug = get_post_field('post_name', get_queried_object_id());
             if (isset(self::PAGE_MAP[$slug])) {
+                // Clear any stale theme page-template assignment so WP
+                // doesn't 404 looking for a deleted theme template file.
+                $page_id = get_queried_object_id();
+                $assigned = get_post_meta($page_id, '_wp_page_template', true);
+                if ($assigned && 'default' !== $assigned && !file_exists(get_stylesheet_directory() . '/' . $assigned)) {
+                    delete_post_meta($page_id, '_wp_page_template');
+                }
+
                 $custom = self::locate(self::PAGE_MAP[$slug]);
                 if ($custom) {
                     return $custom;

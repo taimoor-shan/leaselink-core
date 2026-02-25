@@ -81,13 +81,16 @@ class SRP_REST_Applications
             'callback' => array($this, 'update_application'),
             'permission_callback' => 'is_user_logged_in',
             'args' => array(
-                'id' => array('validate_callback' => function ($param) {
-                    return is_numeric($param); }),
+                'id' => array(
+                    'validate_callback' => function ($param) {
+                        return is_numeric($param);
+                    }
+                ),
                 'status' => array(
                     'required' => true,
                     'sanitize_callback' => 'sanitize_text_field',
                     'validate_callback' => function ($value) {
-                        return in_array($value, array('accepted', 'rejected', 'withdrawn'), true);
+                        return in_array($value, array('accepted', 'rejected', 'withdrawn', 'under_review'), true);
                     },
                 ),
                 'notes' => array('required' => false, 'sanitize_callback' => 'sanitize_textarea_field'),
@@ -226,6 +229,10 @@ class SRP_REST_Applications
 
             case 'withdrawn':
                 $result = $this->workflow->withdraw($application_id, $current_user);
+                break;
+
+            case 'under_review':
+                $result = $this->workflow->mark_under_review($application_id, $current_user);
                 break;
 
             default:

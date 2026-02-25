@@ -171,6 +171,7 @@ class SRP_Core
         // REST API.
         require_once $path . 'rest-api/class-srp-rest-listings.php';
         require_once $path . 'rest-api/class-srp-rest-applications.php';
+        require_once $path . 'rest-api/class-srp-rest-properties.php';
 
         // Template Loader & Frontend.
         require_once $path . 'class-srp-template-loader.php';
@@ -233,6 +234,7 @@ class SRP_Core
     {
         new RestApi\SRP_REST_Listings();
         new RestApi\SRP_REST_Applications($this->application_workflow);
+        new RestApi\SRP_REST_Properties();
     }
 
     /**

@@ -173,13 +173,47 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
         <aside style="width:300px;flex-shrink:0;">
             <div style="position:sticky;top:5rem;">
                 <!-- Apply / Login -->
-                <?php if (is_user_logged_in() && current_user_can('submit_applications')): ?>
+                <?php if (is_user_logged_in() && current_user_can('submit_applications')):
+                    // Check if student already applied to this unit.
+                    global $wpdb;
+                    $already_applied = false;
+                    $app_status = '';
+                    if ($unit_id) {
+                        $existing = $wpdb->get_row($wpdb->prepare(
+                            "SELECT application_status FROM {$wpdb->prefix}rental_applications
+                             WHERE student_id = %d AND unit_id = %d AND application_status IN ('submitted', 'under_review')
+                             LIMIT 1",
+                            get_current_user_id(),
+                            $unit_id
+                        ));
+                        if ($existing) {
+                            $already_applied = true;
+                            $app_status = $existing->application_status;
+                        }
+                    }
+                ?>
+                    <?php if ($already_applied): ?>
+                        <div class="ll-card" style="padding:1.5rem;margin-bottom:1rem;text-align:center;">
+                            <svg style="width:48px;height:48px;color:var(--ll-primary);margin:0 auto 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <h3 style="font-size:1.125rem;font-weight:600;margin-bottom:0.25rem;">Already Applied</h3>
+                            <p style="font-size:0.875rem;color:var(--ll-gray);margin-bottom:1rem;">
+                                Your application is <strong><?php echo esc_html(ucfirst(str_replace('_', ' ', $app_status))); ?></strong>.
+                            </p>
+                            <a href="<?php echo esc_url(home_url('/my-applications/')); ?>" class="ll-btn ll-btn-secondary"
+                                style="width:100%;text-align:center;text-decoration:none;">View My Applications</a>
+                        </div>
+                    <?php else: ?>
                     <div class="ll-card" style="padding:1.5rem;margin-bottom:1rem;" x-data="{
                         showForm: false,
                         submitted: false,
                         submitting: false,
+                        error: '',
                         async submitApp(event) {
                             this.submitting = true;
+                            this.error = '';
                             const form = event.target;
                             const formData = new FormData(form);
                             const data = Object.fromEntries(formData);
@@ -192,13 +226,14 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
                                     },
                                     body: JSON.stringify(data)
                                 });
+                                const result = await res.json();
                                 if (res.ok) {
                                     this.submitted = true;
                                     this.showForm = false;
                                 } else {
-                                    alert('Failed to submit. Please try again.');
+                                    this.error = result.message || 'Failed to submit. Please try again.';
                                 }
-                            } catch(e) { alert('Something went wrong. Please try again.'); }
+                            } catch(e) { this.error = 'Something went wrong. Please try again.'; }
                             this.submitting = false;
                         }
                     }">
@@ -209,6 +244,10 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
                             <button @click="showForm = true" class="ll-btn ll-btn-primary" style="width:100%;">Apply
                                 Now</button>
                         </div>
+
+                        <!-- Error message -->
+                        <div x-show="error" x-text="error"
+                            style="padding:0.75rem;margin-bottom:0.75rem;border-radius:0.5rem;background:var(--ll-danger-bg, #fef2f2);color:var(--ll-danger, #dc2626);font-size:0.875rem;"></div>
 
                         <form x-show="showForm" @submit.prevent="submitApp($event)"
                             style="display:flex;flex-direction:column;gap:0.75rem;">
@@ -250,6 +289,7 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
                                 shortly.</p>
                         </div>
                     </div>
+                    <?php endif; ?>
                 <?php elseif (!is_user_logged_in()): ?>
                     <div class="ll-card" style="padding:1.5rem;margin-bottom:1rem;">
                         <h3 style="font-size:1.125rem;font-weight:600;margin-bottom:0.5rem;">Interested?</h3>

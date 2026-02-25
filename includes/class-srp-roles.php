@@ -103,6 +103,7 @@ class SRP_Roles
                 'upload_files' => true,
 
                 // Properties.
+                'manage_properties' => true,
                 'read_property' => true,
                 'edit_properties' => true,
                 'edit_published_properties' => true,

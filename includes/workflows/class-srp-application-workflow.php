@@ -39,7 +39,7 @@ class SRP_Application_Workflow
      * @var array<string, string[]>
      */
     private $allowed_transitions = array(
-        'submitted' => array('under_review', 'withdrawn', 'expired'),
+        'submitted' => array('under_review', 'accepted', 'rejected', 'withdrawn', 'expired'),
         'under_review' => array('accepted', 'rejected', 'withdrawn', 'expired'),
     );
 
@@ -295,20 +295,24 @@ class SRP_Application_Workflow
 
         $application = $this->get_application($application_id);
         if (!$application) {
-            return new \WP_Error('invalid_application', __('Application not found.', 'leaselink-core'));
+            return new \WP_Error('invalid_application', __('Application not found.', 'leaselink-core'), array('status' => 404));
         }
 
-        // Verify the landlord owns this listing.
+        // Verify the landlord owns this listing (admins can accept any).
         $listing = get_post($application->listing_id);
-        if (!$listing || absint($listing->post_author) !== absint($landlord_id)) {
-            return new \WP_Error('unauthorized', __('You do not own this listing.', 'leaselink-core'));
+        if (!$listing) {
+            return new \WP_Error('listing_not_found', __('The associated listing no longer exists.', 'leaselink-core'), array('status' => 404));
+        }
+        if (absint($listing->post_author) !== absint($landlord_id) && !current_user_can('manage_options')) {
+            return new \WP_Error('unauthorized', __('You do not own this listing.', 'leaselink-core'), array('status' => 403));
         }
 
         // Validate transition.
         if (!$this->is_valid_transition($application->application_status, 'accepted')) {
             return new \WP_Error(
                 'invalid_transition',
-                __('This application cannot be accepted in its current state.', 'leaselink-core')
+                __('This application cannot be accepted in its current state.', 'leaselink-core'),
+                array('status' => 422)
             );
         }
 
@@ -366,6 +370,56 @@ class SRP_Application_Workflow
     }
 
     /**
+     * Mark an application as under review (landlord action).
+     *
+     * @since 1.1.0
+     *
+     * @param int $application_id The application ID.
+     * @param int $landlord_id    The landlord's user ID.
+     * @return true|\WP_Error
+     */
+    public function mark_under_review($application_id, $landlord_id)
+    {
+        global $wpdb;
+
+        $application = $this->get_application($application_id);
+        if (!$application) {
+            return new \WP_Error('invalid_application', __('Application not found.', 'leaselink-core'), array('status' => 404));
+        }
+
+        $listing = get_post($application->listing_id);
+        if (!$listing) {
+            return new \WP_Error('listing_not_found', __('The associated listing no longer exists.', 'leaselink-core'), array('status' => 404));
+        }
+        if (absint($listing->post_author) !== absint($landlord_id) && !current_user_can('manage_options')) {
+            return new \WP_Error('unauthorized', __('You do not own this listing.', 'leaselink-core'), array('status' => 403));
+        }
+
+        if (!$this->is_valid_transition($application->application_status, 'under_review')) {
+            return new \WP_Error(
+                'invalid_transition',
+                __('This application cannot be marked as under review in its current state.', 'leaselink-core'),
+                array('status' => 422)
+            );
+        }
+
+        $wpdb->update(
+            $wpdb->prefix . 'rental_applications',
+            array(
+                'application_status' => 'under_review',
+                'reviewed_at' => current_time('mysql'),
+            ),
+            array('application_id' => $application_id),
+            array('%s', '%s'),
+            array('%d')
+        );
+
+        do_action('srp_application_under_review', $application_id, $landlord_id);
+
+        return true;
+    }
+
+    /**
      * Reject an application (landlord action).
      *
      * @since 1.0.0
@@ -385,14 +439,18 @@ class SRP_Application_Workflow
         }
 
         $listing = get_post($application->listing_id);
-        if (!$listing || absint($listing->post_author) !== absint($landlord_id)) {
-            return new \WP_Error('unauthorized', __('You do not own this listing.', 'leaselink-core'));
+        if (!$listing) {
+            return new \WP_Error('listing_not_found', __('The associated listing no longer exists.', 'leaselink-core'), array('status' => 404));
+        }
+        if (absint($listing->post_author) !== absint($landlord_id) && !current_user_can('manage_options')) {
+            return new \WP_Error('unauthorized', __('You do not own this listing.', 'leaselink-core'), array('status' => 403));
         }
 
         if (!$this->is_valid_transition($application->application_status, 'rejected')) {
             return new \WP_Error(
                 'invalid_transition',
-                __('This application cannot be rejected in its current state.', 'leaselink-core')
+                __('This application cannot be rejected in its current state.', 'leaselink-core'),
+                array('status' => 422)
             );
         }
 
