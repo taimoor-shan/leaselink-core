@@ -127,6 +127,24 @@ class SRP_Core
         $this->init_rest_api();
         $this->define_admin_hooks();
         $this->define_public_hooks();
+
+        // Ensure core pages exist (runs once, then sets a flag).
+        add_action('init', [$this, 'maybe_create_pages'], 20);
+    }
+
+    /**
+     * Create pages if they haven't been created yet.
+     * Runs on every init but short-circuits via an option flag.
+     */
+    public function maybe_create_pages()
+    {
+        $pages_version = get_option('leaselink_pages_version', '0');
+        if (version_compare($pages_version, '1.1.2', '>=')) {
+            return;
+        }
+        require_once plugin_dir_path(__FILE__) . 'class-srp-activator.php';
+        SRP_Activator::activate();
+        update_option('leaselink_pages_version', '1.1.2');
     }
 
     /**
@@ -157,6 +175,7 @@ class SRP_Core
         // Template Loader & Frontend.
         require_once $path . 'class-srp-template-loader.php';
         require_once $path . 'class-srp-frontend.php';
+        require_once $path . 'class-srp-auth.php';
 
         // Admin Meta Boxes.
         $admin_path = plugin_dir_path(__DIR__) . 'admin/';
@@ -241,6 +260,9 @@ class SRP_Core
 
         // Frontend — shortcodes, assets, dashboard protection.
         $this->frontend = new SRP_Frontend();
+
+        // Auth — custom login/signup pages, wp-login redirects.
+        new SRP_Auth();
     }
 
     /**

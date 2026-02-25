@@ -66,6 +66,8 @@ class SRP_Activator
 
 			// Public pages
 			'search-listings' => ['title' => 'Search Listings', 'parent' => ''],
+			'login' => ['title' => 'Login', 'parent' => ''],
+			'signup' => ['title' => 'Create Account', 'parent' => ''],
 		];
 
 		foreach ($pages as $slug => $page_data) {

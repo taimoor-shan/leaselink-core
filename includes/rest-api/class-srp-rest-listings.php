@@ -61,6 +61,115 @@ class SRP_REST_Listings
                 ),
             ),
         ));
+
+        // Save / unsave a listing (bookmark).
+        register_rest_route(self::NAMESPACE , '/listings/(?P<id>\d+)/save', array(
+            array(
+                'methods' => 'POST',
+                'callback' => array($this, 'save_listing'),
+                'permission_callback' => function () {
+                    return is_user_logged_in();
+                },
+            ),
+            array(
+                'methods' => 'DELETE',
+                'callback' => array($this, 'unsave_listing'),
+                'permission_callback' => function () {
+                    return is_user_logged_in();
+                },
+            ),
+        ));
+
+        // Check saved status for current user.
+        register_rest_route(self::NAMESPACE , '/listings/saved-ids', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_saved_ids'),
+            'permission_callback' => function () {
+                return is_user_logged_in();
+            },
+        ));
+    }
+
+    /**
+     * Save (bookmark) a listing.
+     *
+     * @param \WP_REST_Request $request
+     * @return \WP_REST_Response|\WP_Error
+     */
+    public function save_listing($request)
+    {
+        global $wpdb;
+
+        $listing_id = absint($request->get_param('id'));
+        $user_id = get_current_user_id();
+        $table = $wpdb->prefix . 'rental_saved_listings';
+
+        // Verify listing exists.
+        $post = get_post($listing_id);
+        if (!$post || 'cpt_listing' !== $post->post_type) {
+            return new \WP_Error('not_found', 'Listing not found.', array('status' => 404));
+        }
+
+        // Check if already saved.
+        $exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table} WHERE student_id = %d AND listing_id = %d",
+            $user_id,
+            $listing_id
+        ));
+
+        if ($exists) {
+            return new \WP_REST_Response(array('saved' => true, 'message' => 'Already saved.'), 200);
+        }
+
+        $wpdb->insert($table, array(
+            'student_id' => $user_id,
+            'listing_id' => $listing_id,
+            'saved_at' => current_time('mysql'),
+        ), array('%d', '%d', '%s'));
+
+        return new \WP_REST_Response(array('saved' => true, 'message' => 'Listing saved.'), 201);
+    }
+
+    /**
+     * Unsave (remove bookmark) a listing.
+     *
+     * @param \WP_REST_Request $request
+     * @return \WP_REST_Response
+     */
+    public function unsave_listing($request)
+    {
+        global $wpdb;
+
+        $listing_id = absint($request->get_param('id'));
+        $user_id = get_current_user_id();
+        $table = $wpdb->prefix . 'rental_saved_listings';
+
+        $wpdb->delete($table, array(
+            'student_id' => $user_id,
+            'listing_id' => $listing_id,
+        ), array('%d', '%d'));
+
+        return new \WP_REST_Response(array('saved' => false, 'message' => 'Listing removed.'), 200);
+    }
+
+    /**
+     * Get all saved listing IDs for the current user.
+     *
+     * @return \WP_REST_Response
+     */
+    public function get_saved_ids()
+    {
+        global $wpdb;
+
+        $user_id = get_current_user_id();
+        $table = $wpdb->prefix . 'rental_saved_listings';
+
+        $ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT listing_id FROM {$table} WHERE student_id = %d",
+            $user_id
+        ));
+
+        return new \WP_REST_Response(array_map('absint', $ids), 200);
     }
 
     /**
@@ -80,16 +189,26 @@ class SRP_REST_Listings
             $per_page = 100;
         }
 
-        $args = array(
-            'post_type' => 'cpt_listing',
+        // ── Phase 1: Find qualifying unit IDs based on unit/property meta. ──
+        // These filters target meta on cpt_unit / cpt_property, NOT on cpt_listing,
+        // so we must resolve them first.
+
+        $unit_args = array(
+            'post_type' => 'cpt_unit',
             'post_status' => 'publish',
-            'posts_per_page' => $per_page,
-            'paged' => $page,
+            'posts_per_page' => -1,
+            'fields' => 'ids',
             'meta_query' => array('relation' => 'AND'),
-            'tax_query' => array('relation' => 'AND'),
         );
 
-        // Price range filter.
+        // Only available units.
+        $unit_args['meta_query'][] = array(
+            'key' => '_availability_status',
+            'value' => 'available',
+            'compare' => '=',
+        );
+
+        // Price range filter (rent_price is on the unit).
         $min_price = $request->get_param('min_price');
         $max_price = $request->get_param('max_price');
 
@@ -110,73 +229,139 @@ class SRP_REST_Listings
                 $price_query['compare'] = '<=';
             }
 
-            $args['meta_query'][] = $price_query;
+            $unit_args['meta_query'][] = $price_query;
         }
 
-        // City filter.
-        $city = $request->get_param('city');
-        if ($city) {
-            $args['meta_query'][] = array(
-                'key' => '_property_city',
-                'value' => sanitize_text_field($city),
-                'compare' => '=',
-            );
-        }
-
-        // Gender preference.
+        // Gender preference (on the unit).
         $gender = $request->get_param('gender');
         if ($gender) {
-            $args['meta_query'][] = array(
+            $unit_args['meta_query'][] = array(
                 'key' => '_gender_preference',
                 'value' => sanitize_text_field($gender),
                 'compare' => '=',
             );
         }
 
-        // Furnished status.
+        // Furnished status (on the unit).
         $furnished = $request->get_param('furnished');
         if ($furnished) {
-            $args['meta_query'][] = array(
+            $unit_args['meta_query'][] = array(
                 'key' => '_furnished_status',
                 'value' => sanitize_text_field($furnished),
                 'compare' => '=',
             );
         }
 
-        // Room type taxonomy.
+        $qualifying_unit_ids = get_posts($unit_args);
+
+        // City filter — lives on the parent property, so we may need to
+        // further restrict units to those whose property matches the city.
+        $city = $request->get_param('city');
+        if ($city && !empty($qualifying_unit_ids)) {
+            $property_args = array(
+                'post_type' => 'cpt_property',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                'fields' => 'ids',
+                'meta_query' => array(
+                    array(
+                        'key' => '_property_city',
+                        'value' => sanitize_text_field($city),
+                        'compare' => 'LIKE',
+                    ),
+                ),
+            );
+            $matching_property_ids = get_posts($property_args);
+
+            if (empty($matching_property_ids)) {
+                // No properties in this city — return empty results.
+                $response = new \WP_REST_Response(array(), 200);
+                $response->header('X-WP-Total', 0);
+                $response->header('X-WP-TotalPages', 0);
+                return $response;
+            }
+
+            // Keep only units that belong to a matching property.
+            $filtered_unit_ids = array();
+            foreach ($qualifying_unit_ids as $uid) {
+                $parent_property = get_post_meta($uid, '_unit_property_id', true);
+                if (!$parent_property) {
+                    $parent_property = wp_get_post_parent_id($uid);
+                }
+                if (in_array((int) $parent_property, $matching_property_ids, true)) {
+                    $filtered_unit_ids[] = $uid;
+                }
+            }
+            $qualifying_unit_ids = $filtered_unit_ids;
+        }
+
+        // If no qualifying units exist, return empty immediately.
+        if (empty($qualifying_unit_ids)) {
+            $response = new \WP_REST_Response(array(), 200);
+            $response->header('X-WP-Total', 0);
+            $response->header('X-WP-TotalPages', 0);
+            return $response;
+        }
+
+        // ── Phase 2: Query listings that reference qualifying units. ──
+
+        $args = array(
+            'post_type' => 'cpt_listing',
+            'post_status' => 'publish',
+            'posts_per_page' => $per_page,
+            'paged' => $page,
+            'meta_query' => array(
+                array(
+                    'key' => '_listing_unit_id',
+                    'value' => $qualifying_unit_ids,
+                    'compare' => 'IN',
+                    'type' => 'NUMERIC',
+                ),
+            ),
+        );
+
+        // Room type taxonomy (on the unit, but we filter listing-side as fallback).
         $room_type = $request->get_param('room_type');
         if ($room_type) {
-            $args['tax_query'][] = array(
-                'taxonomy' => 'room_type',
-                'field' => 'slug',
-                'terms' => array_map('sanitize_text_field', (array) $room_type),
+            // Filter units by taxonomy first, then restrict listings.
+            $tax_unit_ids = get_posts(array(
+                'post_type' => 'cpt_unit',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                'fields' => 'ids',
+                'post__in' => $qualifying_unit_ids,
+                'tax_query' => array(
+                    array(
+                        'taxonomy' => 'room_type',
+                        'field' => 'slug',
+                        'terms' => array_map('sanitize_text_field', (array) $room_type),
+                    ),
+                ),
+            ));
+
+            if (empty($tax_unit_ids)) {
+                $response = new \WP_REST_Response(array(), 200);
+                $response->header('X-WP-Total', 0);
+                $response->header('X-WP-TotalPages', 0);
+                return $response;
+            }
+
+            $args['meta_query'] = array(
+                array(
+                    'key' => '_listing_unit_id',
+                    'value' => $tax_unit_ids,
+                    'compare' => 'IN',
+                    'type' => 'NUMERIC',
+                ),
             );
         }
-
-        // Amenities taxonomy.
-        $amenities = $request->get_param('amenities');
-        if ($amenities) {
-            $args['tax_query'][] = array(
-                'taxonomy' => 'amenity',
-                'field' => 'slug',
-                'terms' => array_map('sanitize_text_field', (array) $amenities),
-                'operator' => 'AND',
-            );
-        }
-
-        // Only available units.
-        $args['meta_query'][] = array(
-            'key' => '_availability_status',
-            'value' => 'available',
-            'compare' => '=',
-        );
 
         $query = new \WP_Query($args);
         $listings = array();
 
         if ($query->have_posts()) {
             // Pre-load meta cache for performance.
-            update_post_meta_cache(wp_list_pluck($query->posts, 'ID'));
+            \update_postmeta_cache(\wp_list_pluck($query->posts, 'ID'));
 
             foreach ($query->posts as $post) {
                 $listings[] = $this->prepare_listing($post);
@@ -251,6 +436,7 @@ class SRP_REST_Listings
             'view_count' => absint(get_post_meta($post->ID, '_view_count', true)),
             'published_at' => get_post_meta($post->ID, '_published_at', true),
             'permalink' => get_permalink($post->ID),
+            'link' => get_permalink($post->ID),
             'thumbnail' => get_the_post_thumbnail_url($post->ID, 'large'),
         );
 

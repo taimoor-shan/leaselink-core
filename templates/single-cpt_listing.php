@@ -78,9 +78,11 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
             <div class="ll-card" style="padding:1.5rem;margin-bottom:1.25rem;">
                 <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
                     <?php if ($featured):
-                        SRP_Template_Loader::get_template('components/badge.php', ['text' => 'Featured', 'color' => 'warning']); endif; ?>
+                        SRP_Template_Loader::get_template('components/badge.php', ['text' => 'Featured', 'color' => 'warning']);
+                    endif; ?>
                     <?php if ($room_type):
-                        SRP_Template_Loader::get_template('components/badge.php', ['text' => $room_labels[$room_type] ?? ucfirst($room_type), 'color' => 'primary']); endif; ?>
+                        SRP_Template_Loader::get_template('components/badge.php', ['text' => $room_labels[$room_type] ?? ucfirst($room_type), 'color' => 'primary']);
+                    endif; ?>
                 </div>
                 <h1 style="font-size:1.75rem;font-weight:700;margin-bottom:0.5rem;color:var(--ll-dark);">
                     <?php the_title(); ?>
@@ -159,10 +161,10 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
                     document.addEventListener('DOMContentLoaded', function () {
                         if (typeof L !== 'undefined') {
                             const map = L.map('listing-map').setView([<?php echo esc_js($lat); ?>, <?php echo esc_js($lng); ?>], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-                    L.marker([<?php echo esc_js($lat); ?>, <?php echo esc_js($lng); ?>]).addTo(map);
-                            }
-                        });
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+                            L.marker([<?php echo esc_js($lat); ?>, <?php echo esc_js($lng); ?>]).addTo(map);
+                        }
+                    });
                 </script>
             <?php endif; ?>
         </div>
@@ -172,7 +174,34 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
             <div style="position:sticky;top:5rem;">
                 <!-- Apply / Login -->
                 <?php if (is_user_logged_in() && current_user_can('submit_applications')): ?>
-                    <div class="ll-card" style="padding:1.5rem;margin-bottom:1rem;" x-data="leaselinkApplication()">
+                    <div class="ll-card" style="padding:1.5rem;margin-bottom:1rem;" x-data="{
+                        showForm: false,
+                        submitted: false,
+                        submitting: false,
+                        async submitApp(event) {
+                            this.submitting = true;
+                            const form = event.target;
+                            const formData = new FormData(form);
+                            const data = Object.fromEntries(formData);
+                            try {
+                                const res = await fetch('<?php echo esc_url(rest_url('rental/v1/applications')); ?>', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
+                                    },
+                                    body: JSON.stringify(data)
+                                });
+                                if (res.ok) {
+                                    this.submitted = true;
+                                    this.showForm = false;
+                                } else {
+                                    alert('Failed to submit. Please try again.');
+                                }
+                            } catch(e) { alert('Something went wrong. Please try again.'); }
+                            this.submitting = false;
+                        }
+                    }">
                         <div x-show="!showForm && !submitted">
                             <h3 style="font-size:1.125rem;font-weight:600;margin-bottom:0.5rem;">Interested?</h3>
                             <p style="font-size:0.875rem;color:var(--ll-gray);margin-bottom:1rem;">Apply now and the
@@ -181,7 +210,7 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
                                 Now</button>
                         </div>
 
-                        <form x-show="showForm" @submit.prevent="submitApplication($event)"
+                        <form x-show="showForm" @submit.prevent="submitApp($event)"
                             style="display:flex;flex-direction:column;gap:0.75rem;">
                             <h3 style="font-size:1rem;font-weight:600;">Submit Application</h3>
                             <div>
@@ -228,6 +257,48 @@ $amenities_list = is_array($amenities_raw) ? $amenities_raw : (is_string($amenit
                             to apply.</p>
                         <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>" class="ll-btn ll-btn-primary"
                             style="width:100%;text-align:center;text-decoration:none;">Log In to Apply</a>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Save Listing -->
+                <?php if (is_user_logged_in()): ?>
+                    <div class="ll-card" style="padding:1rem;margin-bottom:1rem;" x-data="{
+                        saved: false,
+                        loading: true,
+                        async init() {
+                            try {
+                                const res = await fetch('<?php echo esc_url(rest_url('rental/v1/listings/saved-ids')); ?>', {
+                                    headers: { 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>' }
+                                });
+                                if (res.ok) {
+                                    const ids = await res.json();
+                                    this.saved = ids.includes(<?php echo (int) $listing_id; ?>);
+                                }
+                            } catch(e) {}
+                            this.loading = false;
+                        },
+                        async toggle() {
+                            const method = this.saved ? 'DELETE' : 'POST';
+                            try {
+                                await fetch('<?php echo esc_url(rest_url('rental/v1/listings/' . $listing_id . '/save')); ?>', {
+                                    method,
+                                    headers: { 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>' }
+                                });
+                                this.saved = !this.saved;
+                            } catch(e) { alert('Failed. Please try again.'); }
+                        }
+                    }">
+                        <button @click="toggle()" class="ll-btn ll-btn-secondary"
+                            style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.5rem;"
+                            x-show="!loading">
+                            <svg class="w-4 h-4 transition-colors" :class="saved ? 'text-red-500' : ''"
+                                :fill="saved ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"
+                                style="width:18px;height:18px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span x-text="saved ? 'Saved' : 'Save Listing'"></span>
+                        </button>
                     </div>
                 <?php endif; ?>
 

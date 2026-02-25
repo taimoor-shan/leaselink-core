@@ -107,45 +107,60 @@ $init_max_price = isset($_GET['max_price']) ? absint($_GET['max_price']) : '';
                 <div x-show="!loading && listings.length > 0"
                     class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5" id="listing-results">
                     <template x-for="listing in listings" :key="listing.id">
-                        <a :href="listing.link"
-                            class="group block bg-white rounded-xl border border-zinc-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 no-underline">
-                            <div class="relative aspect-[4/3] overflow-hidden bg-zinc-100">
-                                <img :src="listing.thumbnail || ''" :alt="listing.title"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    loading="lazy" x-show="listing.thumbnail">
-                                <div x-show="!listing.thumbnail"
-                                    class="w-full h-full flex items-center justify-center bg-zinc-50">
-                                    <svg class="w-12 h-12 text-zinc-300" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                    </svg>
+                        <div class="relative group">
+                            <a :href="listing.link"
+                                class="block bg-white rounded-xl border border-zinc-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 no-underline">
+                                <div class="relative aspect-[4/3] overflow-hidden bg-zinc-100">
+                                    <img :src="listing.thumbnail || ''" :alt="listing.title"
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        loading="lazy" x-show="listing.thumbnail">
+                                    <div x-show="!listing.thumbnail"
+                                        class="w-full h-full flex items-center justify-center bg-zinc-50">
+                                        <svg class="w-12 h-12 text-zinc-300" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                        </svg>
+                                    </div>
+                                    <span x-show="listing.featured"
+                                        class="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning text-white text-xs font-semibold">Featured</span>
+                                    <span
+                                        class="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 rounded-full bg-dark/60 backdrop-blur-sm text-white text-xs font-medium"
+                                        x-text="listing.room_type"></span>
                                 </div>
-                                <span x-show="listing.featured"
-                                    class="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning text-white text-xs font-semibold">Featured</span>
-                                <span
-                                    class="absolute top-3 right-3 inline-flex items-center px-2.5 py-1 rounded-full bg-dark/60 backdrop-blur-sm text-white text-xs font-medium"
-                                    x-text="listing.room_type"></span>
-                            </div>
-                            <div class="p-4">
-                                <div class="flex items-start justify-between gap-2 mb-2">
-                                    <h3 class="text-base font-semibold text-dark leading-snug line-clamp-1 mb-0"
-                                        x-text="listing.title"></h3>
-                                    <span class="text-lg font-bold text-primary whitespace-nowrap"
-                                        x-text="'€' + listing.price"></span>
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                        <h3 class="text-base font-semibold text-dark leading-snug line-clamp-1 mb-0"
+                                            x-text="listing.title"></h3>
+                                        <span class="text-lg font-bold text-primary whitespace-nowrap"
+                                            x-text="'€' + listing.price"></span>
+                                    </div>
+                                    <p class="text-sm text-gray flex items-center gap-1 mb-3" x-show="listing.city">
+                                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <span x-text="listing.city"></span>
+                                    </p>
                                 </div>
-                                <p class="text-sm text-gray flex items-center gap-1 mb-3" x-show="listing.city">
-                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                            </a>
+                            <?php if (is_user_logged_in()): ?>
+                                <button @click.prevent.stop="toggleSave(listing.id)"
+                                    class="absolute top-3 right-14 z-10 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center transition-colors hover:bg-red-50"
+                                    :title="savedIds.includes(listing.id) ? 'Remove from saved' : 'Save listing'">
+                                    <svg class="w-4 h-4 transition-colors"
+                                        :class="savedIds.includes(listing.id) ? 'text-red-500' : 'text-zinc-400'"
+                                        :fill="savedIds.includes(listing.id) ? 'currentColor' : 'none'"
+                                        stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
-                                    <span x-text="listing.city"></span>
-                                </p>
-                            </div>
-                        </a>
+                                </button>
+                            <?php endif; ?>
+                        </div>
                     </template>
                 </div>
 
@@ -181,7 +196,36 @@ $init_max_price = isset($_GET['max_price']) ? absint($_GET['max_price']) : '';
                 max_price: '<?php echo esc_js($init_max_price); ?>', room_type: '', gender: '', furnished: '', sort: 'date_desc',
             },
             listings: [], loading: true, currentPage: 1, totalPages: 1, totalResults: 0,
-            init() { this.applyFilters(); },
+            savedIds: [],
+            init() {
+                this.applyFilters();
+                this.fetchSavedIds();
+            },
+            async fetchSavedIds() {
+                <?php if (is_user_logged_in()): ?>
+                    try {
+                        const res = await fetch('<?php echo esc_url(rest_url('rental/v1/listings/saved-ids')); ?>', {
+                            headers: { 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>' }
+                        });
+                        if (res.ok) this.savedIds = await res.json();
+                    } catch (e) { /* silent */ }
+                <?php endif; ?>
+            },
+            async toggleSave(id) {
+                const isSaved = this.savedIds.includes(id);
+                const method = isSaved ? 'DELETE' : 'POST';
+                try {
+                    await fetch(`<?php echo esc_url(rest_url('rental/v1/listings/')); ?>${id}/save`, {
+                        method,
+                        headers: { 'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>' }
+                    });
+                    if (isSaved) {
+                        this.savedIds = this.savedIds.filter(sid => sid !== id);
+                    } else {
+                        this.savedIds.push(id);
+                    }
+                } catch (e) { console.error('Save error:', e); }
+            },
             async applyFilters() { this.loading = true; this.currentPage = 1; await this.fetchListings(); },
             async fetchListings() {
                 const params = new URLSearchParams();

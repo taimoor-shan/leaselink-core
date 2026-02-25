@@ -48,6 +48,8 @@ class SRP_Template_Loader
         'profile-settings' => 'dashboard/profile-settings.php',
         'verification' => 'dashboard/verification.php',
         'search-listings' => 'shortcodes/search.php',
+        'login' => 'auth/login.php',
+        'signup' => 'auth/signup.php',
     ];
 
     /**
