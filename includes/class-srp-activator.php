@@ -31,9 +31,105 @@ class SRP_Activator
 		require_once plugin_dir_path(__FILE__) . 'class-srp-roles.php';
 		SRP_Roles::install_roles();
 		self::create_tables();
+		self::create_pages();
 		SRP_Cron::schedule_events();
 		update_option('srp_db_version', '1.0.0');
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Create required pages on activation (WooCommerce pattern).
+	 *
+	 * Each page is only created if it doesn't already exist.
+	 * Page IDs are stored in options for later reference.
+	 *
+	 * @since 1.1.0
+	 */
+	private static function create_pages()
+	{
+		$pages = [
+			// Student pages
+			'student-dashboard' => ['title' => 'Student Dashboard', 'parent' => ''],
+			'my-applications' => ['title' => 'My Applications', 'parent' => ''],
+			'saved-listings' => ['title' => 'Saved Listings', 'parent' => ''],
+
+			// Landlord pages
+			'landlord-dashboard' => ['title' => 'Landlord Dashboard', 'parent' => ''],
+			'my-properties' => ['title' => 'My Properties', 'parent' => ''],
+			'add-property' => ['title' => 'Add Property', 'parent' => ''],
+			'landlord-applications' => ['title' => 'Landlord Applications', 'parent' => ''],
+			'verification' => ['title' => 'Verification', 'parent' => ''],
+
+			// Shared pages
+			'messages' => ['title' => 'Messages', 'parent' => ''],
+			'profile-settings' => ['title' => 'Profile Settings', 'parent' => ''],
+
+			// Public pages
+			'search-listings' => ['title' => 'Search Listings', 'parent' => ''],
+		];
+
+		foreach ($pages as $slug => $page_data) {
+			self::create_page($slug, $page_data['title']);
+		}
+	}
+
+	/**
+	 * Create a single page if it doesn't already exist.
+	 *
+	 * Follows the WooCommerce `wc_create_page()` pattern:
+	 *   1. Check option for stored page ID → verify it still exists.
+	 *   2. Search for existing page by slug.
+	 *   3. Create only if neither check found a valid page.
+	 *
+	 * @param string $slug  Page slug (must match SRP_Template_Loader::PAGE_MAP keys).
+	 * @param string $title Page title shown in WP admin.
+	 * @return int Page ID.
+	 * @since 1.1.0
+	 */
+	private static function create_page($slug, $title)
+	{
+		$option_key = 'leaselink_page_id_' . $slug;
+
+		// 1. Check if we already stored a page ID for this slug.
+		$page_id = get_option($option_key);
+		if ($page_id && get_post_status($page_id)) {
+			return (int) $page_id;
+		}
+
+		// 2. Look for an existing page with this slug (trash included).
+		$existing = get_posts([
+			'post_type' => 'page',
+			'post_status' => ['publish', 'private', 'draft', 'trash'],
+			'name' => $slug,
+			'posts_per_page' => 1,
+			'fields' => 'ids',
+		]);
+
+		if (!empty($existing)) {
+			$page_id = $existing[0];
+			// Un-trash if needed.
+			if (get_post_status($page_id) === 'trash') {
+				wp_update_post(['ID' => $page_id, 'post_status' => 'publish']);
+			}
+		} else {
+			// 3. Create the page.
+			$page_id = wp_insert_post([
+				'post_title' => $title,
+				'post_name' => $slug,
+				'post_content' => '',
+				'post_status' => 'publish',
+				'post_type' => 'page',
+				'post_author' => 1,
+				'comment_status' => 'closed',
+			]);
+		}
+
+		// Store the ID so we can look it up without querying every time.
+		if ($page_id && !is_wp_error($page_id)) {
+			update_option($option_key, $page_id);
+		}
+
+		return (int) $page_id;
 	}
 
 	/**

@@ -31,7 +31,27 @@ class SRP_Template_Loader
     }
 
     /**
-     * Override templates for our CPTs.
+     * Page-slug → plugin template mapping.
+     *
+     * Key:   WordPress page slug.
+     * Value: relative template path inside templates/.
+     */
+    const PAGE_MAP = [
+        'landlord-dashboard' => 'dashboard/landlord-dashboard.php',
+        'student-dashboard' => 'dashboard/student-dashboard.php',
+        'my-properties' => 'dashboard/my-properties.php',
+        'add-property' => 'dashboard/add-property.php',
+        'my-applications' => 'dashboard/my-applications.php',
+        'landlord-applications' => 'dashboard/landlord-applications.php',
+        'saved-listings' => 'dashboard/saved-listings.php',
+        'messages' => 'dashboard/messages.php',
+        'profile-settings' => 'dashboard/profile-settings.php',
+        'verification' => 'dashboard/verification.php',
+        'search-listings' => 'shortcodes/search.php',
+    ];
+
+    /**
+     * Override templates for our CPTs and dashboard pages.
      *
      * @param string $template The resolved template path.
      * @return string
@@ -59,6 +79,17 @@ class SRP_Template_Loader
             $custom = self::locate('single-cpt_property.php');
             if ($custom) {
                 return $custom;
+            }
+        }
+
+        // Dashboard / internal pages — match by page slug.
+        if (is_page()) {
+            $slug = get_post_field('post_name', get_queried_object_id());
+            if (isset(self::PAGE_MAP[$slug])) {
+                $custom = self::locate(self::PAGE_MAP[$slug]);
+                if ($custom) {
+                    return $custom;
+                }
             }
         }
 

@@ -1,26 +1,24 @@
 <?php
 /**
- * Component: Badge
- *
- * Plugin default template — any theme can override
- * by placing a copy in yourtheme/leaselink/components/badge.php
- *
- * @param string $text  Badge text.
- * @param string $color Color variant: primary, success, warning, danger, gray, accent.
- * @param string $size  Size: sm, md.
+ * Badge Component
  *
  * @package LeaseLink
- * @since   1.1.0
  */
 
-$text = $text ?? ($args['text'] ?? '');
-$color = $color ?? ($args['color'] ?? 'gray');
-$size_class = ($size ?? ($args['size'] ?? 'sm')) === 'md' ? 'padding:0.25rem 0.625rem;font-size:0.8125rem;' : '';
+$text = $text ?? 'Status';
+$color = $color ?? 'gray';
 
-if (empty($text)) {
-    return;
-}
+$color_map = [
+    'primary' => 'bg-primary/10 text-primary',
+    'success' => 'bg-success/10 text-success',
+    'warning' => 'bg-warning/10 text-warning',
+    'danger' => 'bg-danger/10 text-danger',
+    'gray' => 'bg-zinc-100 text-zinc-500',
+    'accent' => 'bg-accent/10 text-accent',
+];
+$classes = $color_map[$color] ?? $color_map['gray'];
 ?>
-<span class="ll-badge ll-badge-<?php echo esc_attr($color); ?>" style="<?php echo esc_attr($size_class); ?>">
+
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium <?php echo esc_attr($classes); ?>">
     <?php echo esc_html($text); ?>
 </span>
